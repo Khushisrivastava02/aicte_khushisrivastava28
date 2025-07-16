@@ -1,44 +1,56 @@
 import cv2
 import os
-import string
 
-img = cv2.imread("mypic.jpg") # Replace with the correct image path
+# Load the image
+img = cv2.imread("mypic.png")
 
-msg = input("Enter secret message:")
-password = input("Enter a passcode:")
+# Check if the image loaded properly
+if img is None:
+    print("❌ Error: Image not found. Make sure 'mypic.jpg' is in the same folder.")
+    exit()
 
-d = {}
-c = {}
+# Get the dimensions of the image
+rows, cols, _ = img.shape
+capacity = rows * cols * 3
 
-for i in range(255):
-    d[chr(i)] = i
-    c[i] = chr(i)
+# Get the message and password from user
+msg = input("Enter secret message: ")
+password = input("Enter a passcode: ")
 
-m = 0
-n = 0
-z = 0
+# Check if the message fits in the image
+if len(msg) > capacity:
+    print("❌ Message too long for this image. Use a bigger image or shorter message.")
+    exit()
 
-for i in range(len(msg)):
-    img[n, m, z] = d[msg[i]]
-    n = n + 1
-    m = m + 1
-    z = (z + 1) % 3
+# Create dictionaries for encoding/decoding characters
+d = {chr(i): i for i in range(256)}
+c = {i: chr(i) for i in range(256)}
 
+# Encode the message
+index = 0
+for char in msg:
+    row = index // cols
+    col = index % cols
+    channel = index % 3
+    img[row, col, channel] = d[char]
+    index += 1
+
+# Save and show the encrypted image
 cv2.imwrite("encryptedImage.jpg", img)
-os.system("start encryptedImage.jpg")  # Use 'start' to open the image on Windows
+os.system("start encryptedImage.jpg")
 
-message = ""
-n = 0
-m = 0
-z = 0
+# Decryption process
+pas = input("Enter passcode for decryption: ")
 
-pas = input("Enter passcode for Decryption")
-if password == pas:
-    for i in range(len(msg)):
-        message = message + c[img[n, m, z]]
-        n = n + 1
-        m = m + 1
-        z = (z + 1) % 3
-    print("Decryption message:", message)
+if pas == password:
+    decoded = ""
+    index = 0
+    for _ in range(len(msg)):
+        row = index // cols
+        col = index % cols
+        channel = index % 3
+        decoded += c[img[row, col, channel]]
+        index += 1
+    print("✅ Decrypted Message:", decoded)
 else:
-    print("YOU ARE NOT auth")
+    print("❌ Incorrect password. Access denied.")
